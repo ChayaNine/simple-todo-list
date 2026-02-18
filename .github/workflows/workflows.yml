@@ -26,7 +26,7 @@ jobs:
       - name: Run tests
         run: npm test
 
-  docker:
+    docker:
     runs-on: ubuntu-latest
     needs: test
     permissions:
@@ -52,4 +52,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ghcr.io/chayanine/simple-todo-list:latest
+
+
