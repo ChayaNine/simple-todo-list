@@ -102,6 +102,36 @@ app.put('/api/todos/:id', (req, res) => {
   }
 });
 
+/**
+ * ✅ NEW FEATURE: Edit a todo text
+ * Route: PUT /api/todos/:id/edit
+ * Body: { "text": "new text" }
+ */
+app.put('/api/todos/:id/edit', (req, res) => {
+  const id = parseInt(req.params.id);
+  const { text } = req.body;
+
+  if (!text || text.trim() === '') {
+    return res.status(400).json({ error: 'Todo text is required' });
+  }
+
+  const todos = readTodos();
+  const todoIndex = todos.findIndex(t => t.id === id);
+
+  if (todoIndex === -1) {
+    return res.status(404).json({ error: 'Todo not found' });
+  }
+
+  todos[todoIndex].text = text.trim();
+  todos[todoIndex].updatedAt = new Date().toISOString();
+
+  if (writeTodos(todos)) {
+    return res.json(todos[todoIndex]);
+  } else {
+    return res.status(500).json({ error: 'Failed to edit todo' });
+  }
+});
+
 // Delete a todo
 app.delete('/api/todos/:id', (req, res) => {
   const id = parseInt(req.params.id);
@@ -131,4 +161,5 @@ if (require.main === module) {
 
 // Export for testing
 module.exports = app;
+
 
