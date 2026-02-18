@@ -40,7 +40,9 @@ function writeTodos(todos) {
   }
 }
 
-// API Routes
+/* ============================
+   API ROUTES
+============================ */
 
 // Get all todos
 app.get('/api/todos', (req, res) => {
@@ -51,39 +53,53 @@ app.get('/api/todos', (req, res) => {
 // Add a new todo
 app.post('/api/todos', (req, res) => {
   const { text } = req.body;
-  
+
   if (!text || text.trim() === '') {
     return res.status(400).json({ error: 'Todo text is required' });
   }
-  
+
   const todos = readTodos();
+
+  // Generate incremental ID (important for tests)
+  const nextId =
+    todos.length > 0
+      ? Math.max(...todos.map(t => t.id)) + 1
+      : 1;
+
   const newTodo = {
-    id: Date.now(),
+    id: nextId,
     text: text.trim(),
     completed: false,
     createdAt: new Date().toISOString()
   };
-  
+
   todos.push(newTodo);
-  
+
   if (writeTodos(todos)) {
-    res.status(201).json(newTodo);
+    return res.status(201).json(newTodo);
   } else {
-    res.status(500).json({ error: 'Failed to save todo' });
+    return res.status(500).json({ error: 'Failed to save todo' });
   }
 });
 
-// Toggle todo completion
+// Toggle todo completion (FIXED)
 app.put('/api/todos/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const todos = readTodos();
   const todoIndex = todos.findIndex(t => t.id === id);
-  
+
   if (todoIndex === -1) {
     return res.status(404).json({ error: 'Todo not found' });
   }
-  
-  todos[todoIndex].completed = true;
+
+  // Toggle true <-> false
+  todos[todoIndex].completed = !todos[todoIndex].completed;
+
+  if (writeTodos(todos)) {
+    return res.json(todos[todoIndex]);
+  } else {
+    return res.status(500).json({ error: 'Failed to update todo' });
+  }
 });
 
 // Delete a todo
@@ -91,27 +107,28 @@ app.delete('/api/todos/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const todos = readTodos();
   const filteredTodos = todos.filter(t => t.id !== id);
-  
+
   if (todos.length === filteredTodos.length) {
     return res.status(404).json({ error: 'Todo not found' });
   }
-  
+
   if (writeTodos(filteredTodos)) {
-    res.json({ message: 'Todo deleted successfully' });
+    return res.json({ message: 'Todo deleted successfully' });
   } else {
-    res.status(500).json({ error: 'Failed to delete todo' });
+    return res.status(500).json({ error: 'Failed to delete todo' });
   }
 });
 
 // Initialize todos file on startup
 initTodosFile();
 
-// Only start the server if this file is run directly (not imported as a module)
+// Only start server if file run directly (important for tests)
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
 }
 
-// Export for testing and deployment
+// Export for testing
 module.exports = app;
+
